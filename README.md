@@ -86,9 +86,9 @@ st_pmdec, ra, dec
 
 ## Data Sources
 All datasets from NASA Exoplanet Archive:
-  Kepler Objects of Interest
-  K2 Targets
-  TESS Objects of Interest
+- [Kepler Objects of Interest](https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=cumulative)
+- [K2 Targets and Candidates](https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=k2pandc)
+- [TESS Objects of Interest](https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=TOI)
 
 ## model evaluation 
 k2
