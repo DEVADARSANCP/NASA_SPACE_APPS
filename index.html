@@ -1,980 +1,1018 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ExoScan AI</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #001f3f 0%, #0a0e27 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      overflow-x: hidden;
-    }
-
-    @keyframes twinkle {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 1; }
-    }
-
-    .bg-stars {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .bg-star {
-      position: absolute;
-      width: 2px;
-      height: 2px;
-      background: white;
-      border-radius: 50%;
-      animation: twinkle 3s infinite;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 1400px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .initial-view {
-      display: flex;
-      gap: 24px;
-      flex-wrap: wrap;
-      justify-content: center;
-      width: 100%;
-    }
-
-    .results-view {
-      display: none;
-      opacity: 0;
-    }
-
-    .results-view.active {
-      display: block;
-      animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(30px) scale(0.95);
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExoScan AI</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+
+      body {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #001f3f 0%, #0a0e27 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        overflow-x: hidden;
       }
-    }
 
-    .horizontal-scroll {
-      display: flex;
-      gap: 24px;
-      overflow-x: auto;
-      padding-bottom: 20px;
-      scroll-behavior: smooth;
-    }
-
-    .horizontal-scroll::-webkit-scrollbar {
-      height: 8px;
-    }
-
-    .horizontal-scroll::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 10px;
-    }
-
-    .horizontal-scroll::-webkit-scrollbar-thumb {
-      background: rgba(20, 184, 166, 0.5);
-      border-radius: 10px;
-    }
-
-    .horizontal-scroll::-webkit-scrollbar-thumb:hover {
-      background: rgba(20, 184, 166, 0.7);
-    }
-
-    .screen {
-      flex: 0 0 320px;
-      min-width: 320px;
-      background: linear-gradient(135deg, #1a2332 0%, #0d1623 100%);
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      border: 2px solid transparent;
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .screen::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(circle at top right, rgba(20, 184, 166, 0.05), transparent 60%);
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-
-    .screen:hover::before {
-      opacity: 1;
-    }
-
-    .screen:hover {
-      border: 2px solid rgba(20, 184, 166, 0.3);
-      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6), 0 0 50px rgba(20, 184, 166, 0.15);
-      transform: translateY(-8px);
-    }
-
-    .guide-screen {
-      flex: 1;
-      min-width: 280px;
-      max-width: 420px;
-      background: linear-gradient(135deg, #1a2332 0%, #0d1623 100%);
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      border: 2px solid rgba(20, 184, 166, 0.2);
-    }
-
-    .step {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 24px;
-      align-items: flex-start;
-    }
-
-    .guide-screen .step {
-      opacity: 0;
-      animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    .guide-screen .step:nth-child(1) { animation-delay: 0.1s; }
-    .guide-screen .step:nth-child(2) { animation-delay: 0.2s; }
-    .guide-screen .step:nth-child(3) { animation-delay: 0.3s; }
-    .guide-screen .step:nth-child(4) { animation-delay: 0.4s; }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
+      @keyframes twinkle {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
       }
-      to {
-        opacity: 1;
-        transform: translateY(0);
+
+      .bg-stars {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
       }
-    }
 
-    .step-number {
-      min-width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, #14b8a6, #0d9488);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #042f2e;
-      font-weight: bold;
-      font-size: 16px;
-      box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
-      transition: all 0.3s ease;
-    }
+      .bg-star {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: white;
+        border-radius: 50%;
+        animation: twinkle 3s infinite;
+      }
 
-    .step:hover .step-number {
-      transform: scale(1.1) rotate(360deg);
-      box-shadow: 0 6px 20px rgba(20, 184, 166, 0.5);
-    }
+      .container {
+        width: 100%;
+        max-width: 1400px;
+        position: relative;
+        z-index: 1;
+      }
 
-    .step-content {
-      flex: 1;
-    }
-
-    .step-title {
-      color: white;
-      font-weight: 600;
-      font-size: 15px;
-      margin-bottom: 6px;
-    }
-
-    .step-text {
-      color: #94a3b8;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 24px;
-    }
-
-    .header-back {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .back-btn {
-      color: white;
-      font-size: 24px;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 8px;
-    }
-
-    .back-btn:hover {
-      transform: translateX(-5px) scale(1.1);
-      background: rgba(20, 184, 166, 0.15);
-      color: #14b8a6;
-    }
-
-    .back-btn:active {
-      transform: translateX(-8px) scale(1.05);
-    }
-
-    h2 {
-      font-size: 28px;
-      color: white;
-      font-weight: bold;
-      line-height: 1.2;
-    }
-
-    h3 {
-      font-size: 20px;
-      color: white;
-      font-weight: 600;
-    }
-
-    .illustration {
-      margin: 24px 0;
-      width: 100%;
-      height: 200px;
-      background: linear-gradient(135deg, #1e3a5f, #0f2847);
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .description {
-      font-size: 13px;
-      color: #94a3b8;
-      line-height: 1.5;
-      margin-top: 16px;
-    }
-
-    .upload-area {
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 24px;
-      color: #94a3b8;
-      margin-bottom: 16px;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      border: 2px dashed #334155;
-      position: relative;
-    }
-
-    .upload-area:hover {
-      border-color: #14b8a6;
-      color: #14b8a6;
-      background: rgba(20, 184, 166, 0.05);
-      transform: scale(1.02);
-    }
-
-    .upload-area.uploading {
-      border-color: #f59e0b;
-      color: #f59e0b;
-      animation: pulse 1.5s infinite;
-    }
-
-    .upload-area.uploaded {
-      border-color: #14b8a6;
-      color: #14b8a6;
-      background: rgba(20, 184, 166, 0.1);
-      animation: uploadSuccess 0.5s ease;
-    }
-
-    @keyframes uploadSuccess {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
-
-    .results-card {
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 20px;
-      margin-top: 24px;
-      animation: fadeIn 0.6s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .value {
-      color: #6ee7b7;
-      font-size: 24px;
-      font-weight: 600;
-      margin: 12px 0;
-      animation: countUp 1s ease;
-    }
-
-    @keyframes countUp {
-      from { opacity: 0; transform: scale(0.8); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin: 16px 0;
-      font-size: 13px;
-    }
-
-    .stat-item {
-      color: #94a3b8;
-      padding: 12px;
-      background: rgba(20, 184, 166, 0.05);
-      border-radius: 8px;
-      transition: all 0.3s ease;
-    }
-
-    .stat-item:hover {
-      background: rgba(20, 184, 166, 0.1);
-      transform: translateY(-2px);
-    }
-
-    .stat-value {
-      color: white;
-      font-weight: 600;
-      margin-top: 4px;
-      font-size: 18px;
-    }
-
-    .spinner {
-      border: 3px solid #1e293b;
-      border-top: 3px solid #14b8a6;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .label {
-      color: #94a3b8;
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-
-    .download-section {
-      margin-top: 20px;
-      display: grid;
-      gap: 10px;
-    }
-
-    .download-btn {
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: white;
-      padding: 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-align: left;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
-
-    .download-btn:hover {
-      background: rgba(20, 184, 166, 0.1);
-      border-color: #14b8a6;
-      transform: translateX(5px);
-    }
-
-    .mission-selector {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .mission-btn {
-      padding: 14px;
-      border-radius: 10px;
-      background: #1e293b;
-      border: 2px solid #334155;
-      color: #94a3b8;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      font-size: 14px;
-      font-weight: 600;
-      text-align: center;
-    }
-
-    .mission-btn:hover:not(.active) {
-      border-color: #14b8a6;
-      color: #14b8a6;
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(20, 184, 166, 0.2);
-    }
-
-    .mission-btn.active {
-      background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
-      border-color: #14b8a6 !important;
-      color: #042f2e !important;
-      box-shadow: 0 5px 15px rgba(20, 184, 166, 0.4) !important;
-      transform: translateY(-2px);
-    }
-
-    .mission-btn.active:hover {
-      box-shadow: 0 7px 20px rgba(20, 184, 166, 0.5) !important;
-    }
-
-    .mission-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .mission-btn:disabled:hover {
-      border-color: #334155;
-      color: #94a3b8;
-      transform: none;
-      box-shadow: none;
-    }
-
-    .mission-btn.readonly {
-      pointer-events: none;
-      opacity: 0.6;
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-
-    .error-message {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #fca5a5;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 12px;
-      font-size: 13px;
-    }
-
-    .mission-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      background: linear-gradient(135deg, #14b8a6, #0d9488);
-      color: #042f2e;
-      margin-bottom: 12px;
-    }
-
-    @media (max-width: 768px) {
       .initial-view {
-        flex-direction: column;
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
       }
+
+      .results-view {
+        display: none;
+        opacity: 0;
+      }
+
+      .results-view.active {
+        display: block;
+        animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(30px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .horizontal-scroll {
+        display: flex;
+        gap: 24px;
+        overflow-x: auto;
+        padding-bottom: 20px;
+        scroll-behavior: smooth;
+      }
+
+      .horizontal-scroll::-webkit-scrollbar {
+        height: 8px;
+      }
+
+      .horizontal-scroll::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+      }
+
+      .horizontal-scroll::-webkit-scrollbar-thumb {
+        background: rgba(20, 184, 166, 0.5);
+        border-radius: 10px;
+      }
+
+      .horizontal-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgba(20, 184, 166, 0.7);
+      }
+
       .screen {
-        flex: 0 0 100%;
-        min-width: 100%;
+        flex: 0 0 320px;
+        min-width: 320px;
+        background: linear-gradient(135deg, #1a2332 0%, #0d1623 100%);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        border: 2px solid transparent;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        overflow: hidden;
       }
-    }
-  </style>
-</head>
-<body>
-  <div class="bg-stars" id="bg-stars"></div>
 
-  <div class="container">
-    
-    <div class="initial-view" id="initial-view">
-      <div class="screen">
-        <div class="header">
-          <h2>Welcome to<br>ExoScan AI</h2>
-        </div>
+      .screen::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at top right, rgba(20, 184, 166, 0.05), transparent 60%);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+      }
 
-        <div class="illustration">
-          <div style="font-size: 80px;">🔭</div>
-        </div>
+      .screen:hover::before {
+        opacity: 1;
+      }
 
-        <div class="label" style="margin-bottom: 12px;">Select Mission</div>
-        <div class="mission-selector" id="mission-selector">
-          <button type="button" class="mission-btn active" data-mission="kepler" onclick="selectMission('kepler')">
-            🔭 Kepler
-          </button>
-          <button type="button" class="mission-btn active" data-mission="k2" onclick="selectMission('k2')">
-            🌌 K2
-          </button>
-          <button type="button" class="mission-btn active" data-mission="tess" onclick="selectMission('tess')">
-            ⭐ TESS
-          </button>
-        </div>
+      .screen:hover {
+        border: 2px solid rgba(20, 184, 166, 0.3);
+        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6), 0 0 50px rgba(20, 184, 166, 0.15);
+        transform: translateY(-8px);
+      }
 
-        <input type="file" id="file-input" accept=".csv" onchange="handleFileUpload(event)">
-        <div class="upload-area" id="main-upload-area" onclick="document.getElementById('file-input').click()">
-          📁 Upload CSV File
-        </div>
+      .guide-screen {
+        flex: 1;
+        min-width: 280px;
+        max-width: 420px;
+        background: linear-gradient(135deg, #1a2332 0%, #0d1623 100%);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        border: 2px solid rgba(20, 184, 166, 0.2);
+      }
 
-        <div id="error-container"></div>
+      .step {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+        align-items: flex-start;
+      }
 
-        <p class="description" id="mission-description">Upload your Kepler Objects of Interest (KOI) dataset and let our AI classify potential exoplanets with 99.27% accuracy using advanced XGBoost machine learning.</p>
-      </div>
+      .guide-screen .step {
+        opacity: 0;
+        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
 
-      <div class="guide-screen">
-        <h3 style="margin-bottom: 24px;">How to Use ExoScan AI</h3>
+      .guide-screen .step:nth-child(1) { animation-delay: 0.1s; }
+      .guide-screen .step:nth-child(2) { animation-delay: 0.2s; }
+      .guide-screen .step:nth-child(3) { animation-delay: 0.3s; }
+      .guide-screen .step:nth-child(4) { animation-delay: 0.4s; }
 
-        <div class="step">
-          <div class="step-number">1</div>
-          <div class="step-content">
-            <div class="step-title">Select Mission & Upload CSV</div>
-            <div class="step-text">Choose your mission (Kepler, K2, or TESS) and upload your KOI dataset CSV file.</div>
-          </div>
-        </div>
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-        <div class="step">
-          <div class="step-number">2</div>
-          <div class="step-content">
-            <div class="step-title">Automatic Analysis</div>
-            <div class="step-text">Our XGBoost AI model will analyze each KOI with 26 key features including transit depth, orbital period, and stellar properties.</div>
-          </div>
-        </div>
+      .step-number {
+        min-width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #14b8a6, #0d9488);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #042f2e;
+        font-weight: bold;
+        font-size: 16px;
+        box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
+        transition: all 0.3s ease;
+      }
 
-        <div class="step">
-          <div class="step-number">3</div>
-          <div class="step-content">
-            <div class="step-title">View Results</div>
-            <div class="step-text">Get instant classification results with confidence scores for each KOI: Confirmed, Candidate, or False Positive.</div>
-          </div>
-        </div>
+      .step:hover .step-number {
+        transform: scale(1.1) rotate(360deg);
+        box-shadow: 0 6px 20px rgba(20, 184, 166, 0.5);
+      }
 
-        <div class="step">
-          <div class="step-number">4</div>
-          <div class="step-content">
-            <div class="step-title">Download Reports</div>
-            <div class="step-text">Export complete results, confirmed exoplanets only, and detailed summary reports for your research.</div>
-          </div>
-        </div>
+      .step-content {
+        flex: 1;
+      }
 
-        <div class="results-card" style="margin-top: 32px;">
-          <div class="label">Supported Features</div>
-          <div class="step-text">• Orbital period & transit duration<br>• Transit depth & signal-to-noise<br>• Stellar properties & false positive flags<br>• Planetary radius & equilibrium temperature</div>
-        </div>
-      </div>
-    </div>
+      .step-title {
+        color: white;
+        font-weight: 600;
+        font-size: 15px;
+        margin-bottom: 6px;
+      }
 
-    <div class="results-view" id="results-view">
-      <div class="horizontal-scroll">
-        <!-- Box 1: Upload Screen (Read-only) -->
+      .step-text {
+        color: #94a3b8;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 24px;
+      }
+
+      .header-back {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .back-btn {
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 8px;
+      }
+
+      .back-btn:hover {
+        transform: translateX(-5px) scale(1.1);
+        background: rgba(20, 184, 166, 0.15);
+        color: #14b8a6;
+      }
+
+      .back-btn:active {
+        transform: translateX(-8px) scale(1.05);
+      }
+
+      h2 {
+        font-size: 28px;
+        color: white;
+        font-weight: bold;
+        line-height: 1.2;
+      }
+
+      h3 {
+        font-size: 20px;
+        color: white;
+        font-weight: 600;
+      }
+
+      .illustration {
+        margin: 24px 0;
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(135deg, #1e3a5f, #0f2847);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .description {
+        font-size: 13px;
+        color: #94a3b8;
+        line-height: 1.5;
+        margin-top: 16px;
+      }
+
+      .upload-area {
+        background: #1e293b;
+        border-radius: 12px;
+        padding: 24px;
+        color: #94a3b8;
+        margin-bottom: 16px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        border: 2px dashed #334155;
+        position: relative;
+      }
+
+      .upload-area:hover {
+        border-color: #14b8a6;
+        color: #14b8a6;
+        background: rgba(20, 184, 166, 0.05);
+        transform: scale(1.02);
+      }
+
+      .upload-area.uploading {
+        border-color: #f59e0b;
+        color: #f59e0b;
+        animation: pulse 1.5s infinite;
+      }
+
+      .upload-area.uploaded {
+        border-color: #14b8a6;
+        color: #14b8a6;
+        background: rgba(20, 184, 166, 0.1);
+        animation: uploadSuccess 0.5s ease;
+      }
+
+      @keyframes uploadSuccess {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+      }
+
+      .results-card {
+        background: #1e293b;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 24px;
+        animation: fadeIn 0.6s ease;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .value {
+        color: #6ee7b7;
+        font-size: 24px;
+        font-weight: 600;
+        margin: 12px 0;
+        animation: countUp 1s ease;
+      }
+
+      @keyframes countUp {
+        from { opacity: 0; transform: scale(0.8); }
+        to { opacity: 1; transform: scale(1); }
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 16px 0;
+        font-size: 13px;
+      }
+
+      .stat-item {
+        color: #94a3b8;
+        padding: 12px;
+        background: rgba(20, 184, 166, 0.05);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .stat-item:hover {
+        background: rgba(20, 184, 166, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .stat-value {
+        color: white;
+        font-weight: 600;
+        margin-top: 4px;
+        font-size: 18px;
+      }
+
+      .spinner {
+        border: 3px solid #1e293b;
+        border-top: 3px solid #14b8a6;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .label {
+        color: #94a3b8;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+
+      .download-section {
+        margin-top: 20px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .download-btn {
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        font-family: inherit;  /* ADD THIS */
+        font-size: 14px;       /* ADD THIS */
+      }
+
+      .download-btn:hover {
+        background: rgba(20, 184, 166, 0.1);
+        border-color: #14b8a6;
+        transform: translateX(5px);
+      }
+
+      .mission-selector {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .mission-btn {
+        padding: 14px;
+        border-radius: 10px;
+        background: #1e293b;
+        border: 2px solid #334155;
+        color: #94a3b8;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        font-size: 14px;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .mission-btn:hover:not(.active) {
+        border-color: #14b8a6;
+        color: #14b8a6;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(20, 184, 166, 0.2);
+      }
+
+      .mission-btn.active {
+        background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
+        border-color: #14b8a6 !important;
+        color: #042f2e !important;
+        box-shadow: 0 5px 15px rgba(20, 184, 166, 0.4) !important;
+        transform: translateY(-2px);
+      }
+
+      .mission-btn.active:hover {
+        box-shadow: 0 7px 20px rgba(20, 184, 166, 0.5) !important;
+      }
+
+      .mission-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .mission-btn:disabled:hover {
+        border-color: #334155;
+        color: #94a3b8;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .mission-btn.readonly {
+        pointer-events: none;
+        opacity: 0.6;
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .error-message {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #fca5a5;
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 12px;
+        font-size: 13px;
+      }
+
+      .mission-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        background: linear-gradient(135deg, #14b8a6, #0d9488);
+        color: #042f2e;
+        margin-bottom: 12px;
+      }
+
+      @media (max-width: 768px) {
+        .initial-view {
+          flex-direction: column;
+        }
+        .screen {
+          flex: 0 0 100%;
+          min-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-stars" id="bg-stars"></div>
+
+    <div class="container">
+      
+      <div class="initial-view" id="initial-view">
         <div class="screen">
-          <div class="header-back">
-            <span class="back-btn" onclick="goBack()">←</span>
-            <h3>Welcome to ExoScan AI</h3>
+          <div class="header">
+            <h2>Welcome to<br>ExoScan AI</h2>
           </div>
 
           <div class="illustration">
             <div style="font-size: 80px;">🔭</div>
           </div>
 
-          <div class="mission-badge" id="result-mission-badge">KEPLER MISSION</div>
-
-          <div class="label" style="margin-bottom: 12px;">Selected Mission</div>
-          <div class="mission-selector">
-            <button class="mission-btn readonly" id="result-kepler">
+          <div class="label" style="margin-bottom: 12px;">Select Mission</div>
+          <div class="mission-selector" id="mission-selector">
+            <button type="button" class="mission-btn active" data-mission="kepler" onclick="selectMission('kepler')">
               🔭 Kepler
             </button>
-            <button class="mission-btn readonly" id="result-k2">
+            <button type="button" class="mission-btn active" data-mission="k2" onclick="selectMission('k2')">
               🌌 K2
             </button>
-            <button class="mission-btn readonly" id="result-tess">
+            <button type="button" class="mission-btn active" data-mission="tess" onclick="selectMission('tess')">
               ⭐ TESS
             </button>
           </div>
 
-          <div class="upload-area uploaded" id="results-upload-display" style="pointer-events: none;">
-            📁 <span id="results-filename-display">File uploaded</span>
+          <input type="file" id="file-input" accept=".csv" onchange="handleFileUpload(event)">
+          <div class="upload-area" id="main-upload-area" onclick="document.getElementById('file-input').click()">
+            📁 Upload CSV File
           </div>
 
-          <p class="description" id="result-mission-description">Upload your Kepler Objects of Interest (KOI) dataset and let our AI classify potential exoplanets with 99.27% accuracy using advanced XGBoost machine learning.</p>
+          <div id="error-container"></div>
+
+          <p class="description" id="mission-description">Upload your Kepler Objects of Interest (KOI) dataset and let our AI classify potential exoplanets with 99.27% accuracy using advanced XGBoost machine learning.</p>
         </div>
 
-        <!-- Box 2: Analysis Results -->
-        <div class="screen">
-          <div class="header-back">
-            <span class="back-btn" onclick="goBack()">←</span>
-            <h3>Analysis Results</h3>
-          </div>
+        <div class="guide-screen">
+          <h3 style="margin-bottom: 24px;">How to Use ExoScan AI</h3>
 
-          <div id="loading-spinner" class="hidden">
-            <div class="spinner"></div>
-            <p style="text-align: center; color: #94a3b8; margin-top: 10px;">Analyzing KOIs...</p>
-          </div>
-
-          <div id="results-content" class="hidden">
-            <div class="results-card">
-              <div class="label">Mission</div>
-              <div style="color: #14b8a6; margin: 8px 0; font-weight: 600;" id="results-mission-name">KEPLER</div>
-
-              <div class="label" style="margin-top: 20px;">File Uploaded</div>
-              <div style="color: #14b8a6; margin: 8px 0;" id="filename"></div>
-
-              <div class="label" style="margin-top: 20px;">Total KOIs Analyzed</div>
-              <div class="value" id="total-analyzed">0</div>
-
-              <div class="stats-grid">
-                <div class="stat-item">
-                  <div>✓ Confirmed</div>
-                  <div class="stat-value" id="confirmed-count">0</div>
-                </div>
-                <div class="stat-item">
-                  <div>⚠ Candidates</div>
-                  <div class="stat-value" id="candidate-count">0</div>
-                </div>
-                <div class="stat-item">
-                  <div>✗ False Positives</div>
-                  <div class="stat-value" id="false-positive-count">0</div>
-                </div>
-                <div class="stat-item">
-                  <div>Discovery Rate</div>
-                  <div class="stat-value" id="discovery-rate">0%</div>
-                </div>
-              </div>
-
-              <div class="label" style="margin-top: 20px;">Processing Time</div>
-              <div style="color: white; font-weight: 600; margin-top: 4px;" id="processing-time">0s</div>
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <div class="step-title">Select Mission & Upload CSV</div>
+              <div class="step-text">Choose your mission (Kepler, K2, or TESS) and upload your KOI dataset CSV file.</div>
             </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <div class="step-title">Automatic Analysis</div>
+              <div class="step-text">Our XGBoost AI model will analyze each KOI with 26 key features including transit depth, orbital period, and stellar properties.</div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <div class="step-title">View Results</div>
+              <div class="step-text">Get instant classification results with confidence scores for each KOI: Confirmed, Candidate, or False Positive.</div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <div class="step-title">Download Reports</div>
+              <div class="step-text">Export complete results, confirmed exoplanets only, and detailed summary reports for your research.</div>
+            </div>
+          </div>
+
+          <div class="results-card" style="margin-top: 32px;">
+            <div class="label">Supported Features</div>
+            <div class="step-text">• Orbital period & transit duration<br>• Transit depth & signal-to-noise<br>• Stellar properties & false positive flags<br>• Planetary radius & equilibrium temperature</div>
           </div>
         </div>
+      </div>
 
-        <!-- Box 3: Top Discoveries -->
-        <div class="screen">
-          <div class="header-back">
-            <span class="back-btn" onclick="goBack()">←</span>
-            <h3>Top Discoveries</h3>
-          </div>
-
-          <div id="discoveries-content" class="hidden">
-            <div class="results-card">
-              <div class="label">High Confidence Exoplanets (>90%)</div>
-              <div id="top-discoveries" style="margin-top: 16px;">
-              </div>
+      <div class="results-view" id="results-view">
+        <div class="horizontal-scroll">
+          <!-- Box 1: Upload Screen (Read-only) -->
+          <div class="screen">
+            <div class="header-back">
+              <span class="back-btn" onclick="goBack()">←</span>
+              <h3>Welcome to ExoScan AI</h3>
             </div>
 
-            <div class="results-card">
-              <div class="label">Model Information</div>
-              <div style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 12px;">
-                <strong style="color: white;">Algorithm:</strong> XGBoost Gradient Boosting<br>
-                <strong style="color: white;">Accuracy:</strong> 99.27%<br>
-                <strong style="color: white;">Features:</strong> 26 key parameters<br>
-                <strong style="color: white;">Mission:</strong> <span id="model-mission">Kepler</span><br>
-                <strong style="color: white;">Training Data:</strong> NASA <span id="training-mission">Kepler</span> KOI Dataset
+            <div class="illustration">
+              <div style="font-size: 80px;">🔭</div>
+            </div>
+
+            <div class="mission-badge" id="result-mission-badge">KEPLER MISSION</div>
+
+            <div class="label" style="margin-bottom: 12px;">Selected Mission</div>
+            <div class="mission-selector">
+              <button class="mission-btn readonly" id="result-kepler">
+                🔭 Kepler
+              </button>
+              <button class="mission-btn readonly" id="result-k2">
+                🌌 K2
+              </button>
+              <button class="mission-btn readonly" id="result-tess">
+                ⭐ TESS
+              </button>
+            </div>
+
+            <div class="upload-area uploaded" id="results-upload-display" style="pointer-events: none;">
+              📁 <span id="results-filename-display">File uploaded</span>
+            </div>
+
+            <p class="description" id="result-mission-description">Upload your Kepler Objects of Interest (KOI) dataset and let our AI classify potential exoplanets with 99.27% accuracy using advanced XGBoost machine learning.</p>
+          </div>
+
+          <!-- Box 2: Analysis Results -->
+          <div class="screen">
+            <div class="header-back">
+              <span class="back-btn" onclick="goBack()">←</span>
+              <h3>Analysis Results</h3>
+            </div>
+
+            <div id="loading-spinner" class="hidden">
+              <div class="spinner"></div>
+              <p style="text-align: center; color: #94a3b8; margin-top: 10px;">Analyzing KOIs...</p>
+            </div>
+
+            <div id="results-content" class="hidden">
+              <div class="results-card">
+                <div class="label">Mission</div>
+                <div style="color: #14b8a6; margin: 8px 0; font-weight: 600;" id="results-mission-name">KEPLER</div>
+
+                <div class="label" style="margin-top: 20px;">File Uploaded</div>
+                <div style="color: #14b8a6; margin: 8px 0;" id="filename"></div>
+
+                <div class="label" style="margin-top: 20px;">Total KOIs Analyzed</div>
+                <div class="value" id="total-analyzed">0</div>
+
+                <div class="stats-grid">
+                  <div class="stat-item">
+                    <div>✓ Confirmed</div>
+                    <div class="stat-value" id="confirmed-count">0</div>
+                  </div>
+                  <div class="stat-item">
+                    <div>⚠ Candidates</div>
+                    <div class="stat-value" id="candidate-count">0</div>
+                  </div>
+                  <div class="stat-item">
+                    <div>✗ False Positives</div>
+                    <div class="stat-value" id="false-positive-count">0</div>
+                  </div>
+                  <div class="stat-item">
+                    <div>Discovery Rate</div>
+                    <div class="stat-value" id="discovery-rate">0%</div>
+                  </div>
+                </div>
+
+                <div class="label" style="margin-top: 20px;">Processing Time</div>
+                <div style="color: white; font-weight: 600; margin-top: 4px;" id="processing-time">0s</div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Box 4: Download Results -->
-        <div class="screen">
-          <div class="header-back">
-            <span class="back-btn" onclick="goBack()">←</span>
-            <h3>Download Results</h3>
-          </div>
-
-          <div id="download-content" class="hidden">
-            <div class="results-card">
-              <div class="label">Available Downloads</div>
-              
-              <div class="download-section" id="download-links">
-              </div>
+          <!-- Box 3: Top Discoveries -->
+          <div class="screen">
+            <div class="header-back">
+              <span class="back-btn" onclick="goBack()">←</span>
+              <h3>Top Discoveries</h3>
             </div>
 
-            <div class="results-card">
-              <div class="label">About the Results</div>
-              <div style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 12px;">
-                • <strong style="color: white;">Full Results:</strong> Complete dataset with predictions and confidence scores<br>
-                • <strong style="color: white;">Confirmed Only:</strong> Filtered list of confirmed exoplanets<br>
-                • <strong style="color: white;">Summary Report:</strong> Detailed statistical analysis and insights
+            <div id="discoveries-content" class="hidden">
+              <div class="results-card">
+                <div class="label">High Confidence Exoplanets (>90%)</div>
+                <div id="top-discoveries" style="margin-top: 16px;">
+                </div>
+              </div>
+
+              <div class="results-card">
+                <div class="label">Model Information</div>
+                <div style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                  <strong style="color: white;">Algorithm:</strong> XGBoost Gradient Boosting<br>
+                  <strong style="color: white;">Accuracy:</strong> 99.27%<br>
+                  <strong style="color: white;">Features:</strong> 26 key parameters<br>
+                  <strong style="color: white;">Mission:</strong> <span id="model-mission">Kepler</span><br>
+                  <strong style="color: white;">Training Data:</strong> NASA <span id="training-mission">Kepler</span> KOI Dataset
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Box 4: Download Results -->
+          <div class="screen">
+            <div class="header-back">
+              <span class="back-btn" onclick="goBack()">←</span>
+              <h3>Download Results</h3>
+            </div>
+
+            <div id="download-content" class="hidden">
+              <div class="results-card">
+                <div class="label">Available Downloads</div>
+                
+                <div class="download-section" id="download-links">
+                </div>
+              </div>
+
+              <div class="results-card">
+                <div class="label">About the Results</div>
+                <div style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                  • <strong style="color: white;">Full Results:</strong> Complete dataset with predictions and confidence scores<br>
+                  • <strong style="color: white;">Confirmed Only:</strong> Filtered list of confirmed exoplanets<br>
+                  • <strong style="color: white;">Summary Report:</strong> Detailed statistical analysis and insights
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
     </div>
 
-  </div>
+    <script>
+      const API_URL = 'http://localhost:8000';
+      
+      let uploadedFile = null;
+      let resultsData = null;
+      let selectedMission = 'kepler';
 
-  <script>
-    const API_URL = 'http://localhost:8000';
-    
-    let uploadedFile = null;
-    let resultsData = null;
-    let selectedMission = 'kepler';
+      const missionInfo = {
+        kepler: {
+          name: 'Kepler',
+          description: 'Upload your Kepler Objects of Interest (KOI) dataset and let our AI classify potential exoplanets with 99.27% accuracy using advanced XGBoost machine learning.',
+          emoji: '🔭'
+        },
+        k2: {
+          name: 'K2',
+          description: 'Upload your K2 Mission dataset and let our AI classify potential exoplanets using advanced XGBoost machine learning trained on K2 observations.',
+          emoji: '🌌'
+        },
+        tess: {
+          name: 'TESS',
+          description: 'Upload your TESS (Transiting Exoplanet Survey Satellite) dataset and let our AI classify potential exoplanets using advanced XGBoost machine learning.',
+          emoji: '⭐'
+        }
+      };
 
-    const missionInfo = {
-      kepler: {
-        name: 'Kepler',
-        description: 'Upload your Kepler Objects of Interest (KOI) dataset and let our AI classify potential exoplanets with 99.27% accuracy using advanced XGBoost machine learning.',
-        emoji: '🔭'
-      },
-      k2: {
-        name: 'K2',
-        description: 'Upload your K2 Mission dataset and let our AI classify potential exoplanets using advanced XGBoost machine learning trained on K2 observations.',
-        emoji: '🌌'
-      },
-      tess: {
-        name: 'TESS',
-        description: 'Upload your TESS (Transiting Exoplanet Survey Satellite) dataset and let our AI classify potential exoplanets using advanced XGBoost machine learning.',
-        emoji: '⭐'
+      function generateStars() {
+        const starsContainer = document.getElementById('bg-stars');
+        for (let i = 0; i < 100; i++) {
+          const star = document.createElement('div');
+          star.className = 'bg-star';
+          star.style.left = Math.random() * 100 + '%';
+          star.style.top = Math.random() * 100 + '%';
+          star.style.animationDelay = Math.random() * 3 + 's';
+          starsContainer.appendChild(star);
+        }
       }
-    };
+      generateStars();
 
-    function generateStars() {
-      const starsContainer = document.getElementById('bg-stars');
-      for (let i = 0; i < 100; i++) {
-        const star = document.createElement('div');
-        star.className = 'bg-star';
-        star.style.left = Math.random() * 100 + '%';
-        star.style.top = Math.random() * 100 + '%';
-        star.style.animationDelay = Math.random() * 3 + 's';
-        starsContainer.appendChild(star);
-      }
-    }
-    generateStars();
-
-    function selectMission(mission) {
-      selectedMission = mission;
-      
-      // Remove active class from all buttons
-      const buttons = document.querySelectorAll('#mission-selector .mission-btn');
-      buttons.forEach(btn => {
-        btn.classList.remove('active');
-      });
-      
-      // Add active class to clicked button
-      const activeButton = document.querySelector(`#mission-selector .mission-btn[data-mission="${mission}"]`);
-      if (activeButton) {
-        activeButton.classList.add('active');
-      }
-
-      // Update description
-      const descriptionEl = document.getElementById('mission-description');
-      if (descriptionEl && missionInfo[mission]) {
-        descriptionEl.textContent = missionInfo[mission].description;
-      }
-
-      // Reset upload area if file was already uploaded
-      const uploadArea = document.getElementById('main-upload-area');
-      if (uploadArea.classList.contains('uploaded') || uploadArea.classList.contains('uploading')) {
-        uploadArea.classList.remove('uploaded', 'uploading');
-        uploadArea.innerHTML = '📁 Upload CSV File';
-        document.getElementById('file-input').value = '';
-        uploadedFile = null;
-      }
-      
-      console.log('Mission selected:', mission);
-    }
-
-    function showError(message) {
-      const errorContainer = document.getElementById('error-container');
-      errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
-      setTimeout(() => {
-        errorContainer.innerHTML = '';
-      }, 5000);
-    }
-
-    async function handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      uploadedFile = file;
-      const uploadArea = document.getElementById('main-upload-area');
-      
-      uploadArea.classList.add('uploading');
-      uploadArea.innerHTML = '⏳ Uploading...';
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      uploadArea.classList.remove('uploading');
-      uploadArea.classList.add('uploaded');
-      uploadArea.innerHTML = '✓ ' + file.name;
-      
-      setTimeout(() => {
-        analyzeFile(formData, file.name);
-      }, 500);
-    }
-
-    async function analyzeFile(formData, filename) {
-      formData.append('mission', selectedMission);
-      
-      document.getElementById('initial-view').style.display = 'none';
-      document.getElementById('results-view').classList.add('active');
-      
-      document.getElementById('loading-spinner').classList.remove('hidden');
-      document.getElementById('results-content').classList.add('hidden');
-      document.getElementById('discoveries-content').classList.add('hidden');
-      document.getElementById('download-content').classList.add('hidden');
-
-      try {
-        const response = await fetch(`${API_URL}/predict`, {
-          method: 'POST',
-          body: formData
+      function selectMission(mission) {
+        selectedMission = mission;
+        
+        // Remove active class from all buttons
+        const buttons = document.querySelectorAll('#mission-selector .mission-btn');
+        buttons.forEach(btn => {
+          btn.classList.remove('active');
         });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Analysis failed');
+        
+        // Add active class to clicked button
+        const activeButton = document.querySelector(`#mission-selector .mission-btn[data-mission="${mission}"]`);
+        if (activeButton) {
+          activeButton.classList.add('active');
         }
 
-        const data = await response.json();
-        console.log('API Response:', data);
-        resultsData = data;
+        // Update description
+        const descriptionEl = document.getElementById('mission-description');
+        if (descriptionEl && missionInfo[mission]) {
+          descriptionEl.textContent = missionInfo[mission].description;
+        }
 
-        setTimeout(() => {
-          document.getElementById('loading-spinner').classList.add('hidden');
-          displayResults(data, filename);
-        }, 1500);
-
-      } catch (error) {
-        console.error('Analysis error:', error);
-        document.getElementById('loading-spinner').classList.add('hidden');
-        showError('Analysis failed: ' + error.message);
-        setTimeout(() => goBack(), 3000);
-      }
-    }
-
-    function displayResults(data, filename) {
-      console.log('Displaying results:', data);
-      
-      const mission = data.mission || selectedMission;
-      const missionName = missionInfo[mission].name.toUpperCase();
-      
-      // Update Box 1 (read-only upload display)
-      document.getElementById('results-filename-display').textContent = filename;
-      document.getElementById('result-mission-badge').textContent = `${missionName} MISSION`;
-      
-      // Highlight selected mission in Box 1
-      document.getElementById('result-kepler').classList.remove('active');
-      document.getElementById('result-k2').classList.remove('active');
-      document.getElementById('result-tess').classList.remove('active');
-      document.getElementById('result-' + mission).classList.add('active');
-      
-      // Update description
-      const resultDescEl = document.getElementById('result-mission-description');
-      if (resultDescEl && missionInfo[mission]) {
-        resultDescEl.textContent = missionInfo[mission].description;
-      }
-      
-      // Update Box 2 (Analysis Results)
-      document.getElementById('results-mission-name').textContent = missionName;
-      document.getElementById('filename').textContent = filename;
-      document.getElementById('total-analyzed').textContent = data.summary.total_analyzed;
-      document.getElementById('confirmed-count').textContent = data.summary.confirmed;
-      document.getElementById('candidate-count').textContent = data.summary.candidates;
-      document.getElementById('false-positive-count').textContent = data.summary.false_positives;
-      document.getElementById('discovery-rate').textContent = data.summary.confirmed_percentage + '%';
-      document.getElementById('processing-time').textContent = data.summary.processing_time + 's';
-
-      document.getElementById('results-content').classList.remove('hidden');
-
-      // Update Box 3 (Top Discoveries)
-      document.getElementById('model-mission').textContent = missionName;
-      document.getElementById('training-mission').textContent = missionName;
-      
-      const topDiscoveries = document.getElementById('top-discoveries');
-      if (data.top_discoveries && data.top_discoveries.length > 0) {
-        topDiscoveries.innerHTML = data.top_discoveries.map(d => `
-          <div style="padding: 12px; background: rgba(20, 184, 166, 0.05); border-radius: 8px; margin-bottom: 10px;">
-            <div style="color: white; font-weight: 600;">KOI-${d.kepid}</div>
-            <div style="color: #14b8a6; font-size: 14px; margin-top: 4px;">
-              Confidence: ${(d.confidence * 100).toFixed(1)}%
-            </div>
-          </div>
-        `).join('');
-      } else {
-        topDiscoveries.innerHTML = '<div style="color: #94a3b8;">No high confidence discoveries (>90%) in this dataset.</div>';
-      }
-      document.getElementById('discoveries-content').classList.remove('hidden');
-
-      // Update Box 4 (Download Results)
-      const downloadLinks = document.getElementById('download-links');
-      downloadLinks.innerHTML = `
-        <a href="${API_URL}${data.download_links.full_results}" download class="download-btn">
-          📊 Full Results CSV
-        </a>
-        <a href="${API_URL}${data.download_links.confirmed_only}" download class="download-btn">
-          ✅ Confirmed Exoplanets Only
-        </a>
-        <a href="${API_URL}${data.download_links.summary_report}" download class="download-btn">
-          📈 Summary Report (TXT)
-        </a>
-        <a href="${API_URL}${data.download_links.zip_all}" download class="download-btn">
-          📦 Download All (ZIP)
-        </a>
-      `;
-      document.getElementById('download-content').classList.remove('hidden');
-    }
-
-    function goBack() {
-      document.getElementById('results-view').classList.remove('active');
-      setTimeout(() => {
-        document.getElementById('initial-view').style.display = 'flex';
-        
+        // Reset upload area if file was already uploaded
         const uploadArea = document.getElementById('main-upload-area');
-        uploadArea.classList.remove('uploaded', 'uploading');
-        uploadArea.innerHTML = '📁 Upload CSV File';
+        if (uploadArea.classList.contains('uploaded') || uploadArea.classList.contains('uploading')) {
+          uploadArea.classList.remove('uploaded', 'uploading');
+          uploadArea.innerHTML = '📁 Upload CSV File';
+          document.getElementById('file-input').value = '';
+          uploadedFile = null;
+        }
         
-        document.getElementById('file-input').value = '';
-        uploadedFile = null;
-        resultsData = null;
-      }, 300);
+        console.log('Mission selected:', mission);
+      }
+
+      function showError(message) {
+        const errorContainer = document.getElementById('error-container');
+        errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+        setTimeout(() => {
+          errorContainer.innerHTML = '';
+        }, 5000);
+      }
+
+      async function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        uploadedFile = file;
+        const uploadArea = document.getElementById('main-upload-area');
+        
+        uploadArea.classList.add('uploading');
+        uploadArea.innerHTML = '⏳ Uploading...';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        uploadArea.classList.remove('uploading');
+        uploadArea.classList.add('uploaded');
+        uploadArea.innerHTML = '✓ ' + file.name;
+        
+        setTimeout(() => {
+          analyzeFile(formData, file.name);
+        }, 500);
+      }
+
+      async function analyzeFile(formData, filename) {
+        formData.append('mission', selectedMission);
+        
+        document.getElementById('initial-view').style.display = 'none';
+        document.getElementById('results-view').classList.add('active');
+        
+        document.getElementById('loading-spinner').classList.remove('hidden');
+        document.getElementById('results-content').classList.add('hidden');
+        document.getElementById('discoveries-content').classList.add('hidden');
+        document.getElementById('download-content').classList.add('hidden');
+
+        try {
+          const response = await fetch(`${API_URL}/predict`, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Analysis failed');
+          }
+
+          const data = await response.json();
+          console.log('API Response:', data);
+          resultsData = data;
+
+          setTimeout(() => {
+            document.getElementById('loading-spinner').classList.add('hidden');
+            displayResults(data, filename);
+          }, 1500);
+
+        } catch (error) {
+          console.error('Analysis error:', error);
+          document.getElementById('loading-spinner').classList.add('hidden');
+          showError('Analysis failed: ' + error.message);
+          setTimeout(() => goBack(), 3000);
+        }
+      }
+
+      function displayResults(data, filename) {
+        console.log('Displaying results:', data);
+        
+        const mission = data.mission || selectedMission;
+        const missionName = missionInfo[mission].name.toUpperCase();
+        
+        // Update Box 1 (read-only upload display)
+        document.getElementById('results-filename-display').textContent = filename;
+        document.getElementById('result-mission-badge').textContent = `${missionName} MISSION`;
+        
+        // Highlight selected mission in Box 1
+        document.getElementById('result-kepler').classList.remove('active');
+        document.getElementById('result-k2').classList.remove('active');
+        document.getElementById('result-tess').classList.remove('active');
+        document.getElementById('result-' + mission).classList.add('active');
+        
+        // Update description
+        const resultDescEl = document.getElementById('result-mission-description');
+        if (resultDescEl && missionInfo[mission]) {
+          resultDescEl.textContent = missionInfo[mission].description;
+        }
+        
+        // Update Box 2 (Analysis Results)
+        document.getElementById('results-mission-name').textContent = missionName;
+        document.getElementById('filename').textContent = filename;
+        document.getElementById('total-analyzed').textContent = data.summary.total_analyzed;
+        document.getElementById('confirmed-count').textContent = data.summary.confirmed;
+        document.getElementById('candidate-count').textContent = data.summary.candidates;
+        document.getElementById('false-positive-count').textContent = data.summary.false_positives;
+        document.getElementById('discovery-rate').textContent = data.summary.confirmed_percentage + '%';
+        document.getElementById('processing-time').textContent = data.summary.processing_time + 's';
+
+        document.getElementById('results-content').classList.remove('hidden');
+
+        // Update Box 3 (Top Discoveries)
+        document.getElementById('model-mission').textContent = missionName;
+        document.getElementById('training-mission').textContent = missionName;
+        
+        const topDiscoveries = document.getElementById('top-discoveries');
+        if (data.top_discoveries && data.top_discoveries.length > 0) {
+          topDiscoveries.innerHTML = data.top_discoveries.map(d => `
+            <div style="padding: 12px; background: rgba(20, 184, 166, 0.05); border-radius: 8px; margin-bottom: 10px;">
+              <div style="color: white; font-weight: 600;">KOI-${d.kepid}</div>
+              <div style="color: #14b8a6; font-size: 14px; margin-top: 4px;">
+                Confidence: ${(d.confidence * 100).toFixed(1)}%
+              </div>
+            </div>
+          `).join('');
+        } else {
+          topDiscoveries.innerHTML = '<div style="color: #94a3b8;">No high confidence discoveries (>90%) in this dataset.</div>';
+        }
+        document.getElementById('discoveries-content').classList.remove('hidden');
+
+        // Update Box 4 (Download Results)
+const downloadLinks = document.getElementById('download-links');
+downloadLinks.innerHTML = `
+  <button class="download-btn" data-path="${data.download_links.full_results}">
+    📊 Full Results CSV
+  </button>
+  <button class="download-btn" data-path="${data.download_links.confirmed_only}">
+    ✅ Confirmed Exoplanets Only
+  </button>
+  <button class="download-btn" data-path="${data.download_links.summary_report}">
+    📈 Summary Report (TXT)
+  </button>
+  <button class="download-btn" data-path="${data.download_links.zip_all}">
+    📦 Download All (ZIP)
+  </button>
+`;
+        document.getElementById('download-content').classList.remove('hidden');
+      }
+      function downloadFile(path) {
+       const filename = path.split('/').pop();
+       const url = `${API_URL}${path}`;
+  
+        fetch(url)
+          .then(response => {
+            if (!response.ok) throw new Error('Download failed');
+            return response.blob();
+          })
+          .then(blob => {
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(link.href);
+           })
+          .catch(error => {
+            console.error('Download error:', error);
+            showError('Download failed. Please try again.');
+          });
+      }
+
+      function goBack() {
+        document.getElementById('results-view').classList.remove('active');
+        setTimeout(() => {
+          document.getElementById('initial-view').style.display = 'flex';
+          
+          const uploadArea = document.getElementById('main-upload-area');
+          uploadArea.classList.remove('uploaded', 'uploading');
+          uploadArea.innerHTML = '📁 Upload CSV File';
+          
+          document.getElementById('file-input').value = '';
+          uploadedFile = null;
+          resultsData = null;
+          document.getElementById('error-container').innerHTML = '';
+        }, 300);
+      }
+
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.download-btn');
+  if (btn) {
+    const path = btn.getAttribute('data-path');
+    if (path) {
+      downloadFile(path);
     }
-  </script>
-</body>
-</html>
+  }
+});
+
+    </script>
+  </body>
+  </html>
