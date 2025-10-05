@@ -464,6 +464,46 @@
       transform: translateX(5px);
     }
 
+    .mission-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .mission-btn {
+      padding: 14px;
+      border-radius: 10px;
+      background: #1e293b;
+      border: 2px solid #334155;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .mission-btn:hover {
+      border-color: #14b8a6;
+      color: #14b8a6;
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(20, 184, 166, 0.2);
+    }
+
+    .mission-btn.active {
+      background: linear-gradient(135deg, #14b8a6, #0d9488);
+      border-color: #14b8a6;
+      color: #042f2e;
+      box-shadow: 0 5px 15px rgba(20, 184, 166, 0.3);
+    }
+
+    .mission-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     input[type="file"] {
       display: none;
     }
@@ -503,9 +543,22 @@
           <div style="font-size: 80px;">🔭</div>
         </div>
 
+        <div class="label" style="margin-bottom: 12px;">Select Mission</div>
+        <div class="mission-selector" id="mission-selector">
+          <button class="mission-btn active" data-mission="kepler" onclick="selectMission('kepler')">
+            🔭 Kepler
+          </button>
+          <button class="mission-btn" data-mission="k2" onclick="selectMission('k2')">
+            🌌 K2
+          </button>
+          <button class="mission-btn" data-mission="tess" onclick="selectMission('tess')">
+            ⭐ TESS
+          </button>
+        </div>
+
         <input type="file" id="file-input" accept=".csv" onchange="handleFileUpload(event)">
         <div class="upload-area" id="main-upload-area" onclick="document.getElementById('file-input').click()">
-          📁 Upload KOI Data (CSV)
+          📁 Upload CSV File
         </div>
 
         <div id="error-container"></div>
@@ -519,8 +572,8 @@
         <div class="step">
           <div class="step-number">1</div>
           <div class="step-content">
-            <div class="step-title">Upload Your CSV Data</div>
-            <div class="step-text">Click the upload button and select your KOI dataset CSV file from Kepler, K2, or TESS missions.</div>
+            <div class="step-title">Select Mission & Upload CSV</div>
+            <div class="step-text">Choose your mission (Kepler, K2, or TESS) and upload your KOI dataset CSV file.</div>
           </div>
         </div>
 
@@ -658,6 +711,7 @@
     
     let uploadedFile = null;
     let resultsData = null;
+    let selectedMission = 'kepler';
 
     function generateStars() {
       const starsContainer = document.getElementById('bg-stars');
@@ -671,6 +725,18 @@
       }
     }
     generateStars();
+
+    function selectMission(mission) {
+      selectedMission = mission;
+      
+      const buttons = document.querySelectorAll('.mission-btn');
+      buttons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.mission === mission) {
+          btn.classList.add('active');
+        }
+      });
+    }
 
     function showError(message) {
       const errorContainer = document.getElementById('error-container');
@@ -703,6 +769,8 @@
     }
 
     async function analyzeFile(formData, filename) {
+      formData.append('mission', selectedMission);
+      
       document.getElementById('initial-view').style.display = 'none';
       document.getElementById('results-view').classList.add('active');
       
@@ -792,9 +860,11 @@
         
         const uploadArea = document.getElementById('main-upload-area');
         uploadArea.classList.remove('uploaded', 'uploading');
-        uploadArea.innerHTML = '📁 Upload KOI Data (CSV)';
+        uploadArea.innerHTML = '📁 Upload CSV File';
         
         document.getElementById('file-input').value = '';
+        uploadedFile = null;
+        resultsData = null;
       }, 300);
     }
   </script>
