@@ -49,15 +49,11 @@
     .container {
       width: 100%;
       max-width: 1400px;
-      display: flex;
-      gap: 24px;
-      flex-wrap: wrap;
-      justify-content: center;
       position: relative;
       z-index: 1;
     }
 
-    .initial-view, .results-view {
+    .initial-view {
       display: flex;
       gap: 24px;
       flex-wrap: wrap;
@@ -71,7 +67,7 @@
     }
 
     .results-view.active {
-      display: flex;
+      display: block;
       animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
@@ -86,10 +82,35 @@
       }
     }
 
+    .horizontal-scroll {
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+      padding-bottom: 20px;
+      scroll-behavior: smooth;
+    }
+
+    .horizontal-scroll::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .horizontal-scroll::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    .horizontal-scroll::-webkit-scrollbar-thumb {
+      background: rgba(20, 184, 166, 0.5);
+      border-radius: 10px;
+    }
+
+    .horizontal-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(20, 184, 166, 0.7);
+    }
+
     .screen {
-      flex: 1;
-      min-width: 280px;
-      max-width: 320px;
+      flex: 0 0 320px;
+      min-width: 320px;
       background: linear-gradient(135deg, #1a2332 0%, #0d1623 100%);
       border-radius: 24px;
       padding: 24px;
@@ -253,58 +274,6 @@
       justify-content: center;
       position: relative;
       overflow: hidden;
-    }
-
-    .button {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 15px;
-      cursor: pointer;
-      border: none;
-      margin-bottom: 12px;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(20, 184, 166, 0.4);
-    }
-
-    .button:active {
-      transform: translateY(-1px) scale(0.98);
-    }
-
-    .button-primary {
-      background: linear-gradient(135deg, #14b8a6, #0d9488);
-      color: #042f2e;
-    }
-
-    .button-primary::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.3);
-      transform: translate(-50%, -50%);
-      transition: width 0.6s, height 0.6s;
-    }
-
-    .button-primary:active::before {
-      width: 400px;
-      height: 400px;
-    }
-
-    .button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
     }
 
     .description {
@@ -519,11 +488,12 @@
     }
 
     @media (max-width: 768px) {
-      .container {
+      .initial-view {
         flex-direction: column;
       }
       .screen {
-        max-width: 100%;
+        flex: 0 0 100%;
+        min-width: 100%;
       }
     }
   </style>
@@ -609,95 +579,131 @@
     </div>
 
     <div class="results-view" id="results-view">
-      <div class="screen">
-        <div class="header-back">
-          <span class="back-btn" onclick="goBack()">←</span>
-          <h3>Analysis Results</h3>
+      <div class="horizontal-scroll">
+        <!-- Box 1: Upload Screen (Read-only) -->
+        <div class="screen">
+          <div class="header-back">
+            <span class="back-btn" onclick="goBack()">←</span>
+            <h3>Welcome to ExoScan AI</h3>
+          </div>
+
+          <div class="illustration">
+            <div style="font-size: 80px;">🔭</div>
+          </div>
+
+          <div class="label" style="margin-bottom: 12px;">Select Mission</div>
+          <div class="mission-selector">
+            <button class="mission-btn active" id="result-kepler">
+              🔭 Kepler
+            </button>
+            <button class="mission-btn" id="result-k2">
+              🌌 K2
+            </button>
+            <button class="mission-btn" id="result-tess">
+              ⭐ TESS
+            </button>
+          </div>
+
+          <div class="upload-area uploaded" id="results-upload-display" style="pointer-events: none;">
+            📁 <span id="results-filename-display">File uploaded</span>
+          </div>
+
+          <p class="description">Upload your Kepler Objects of Interest (KOI) dataset and let our AI classify potential exoplanets with 99.27% accuracy using advanced XGBoost machine learning.</p>
         </div>
 
-        <div id="loading-spinner" class="hidden">
-          <div class="spinner"></div>
-          <p style="text-align: center; color: #94a3b8; margin-top: 10px;">Analyzing KOIs...</p>
+        <!-- Box 2: Analysis Results -->
+        <div class="screen">
+          <div class="header-back">
+            <span class="back-btn" onclick="goBack()">←</span>
+            <h3>Analysis Results</h3>
+          </div>
+
+          <div id="loading-spinner" class="hidden">
+            <div class="spinner"></div>
+            <p style="text-align: center; color: #94a3b8; margin-top: 10px;">Analyzing KOIs...</p>
+          </div>
+
+          <div id="results-content" class="hidden">
+            <div class="results-card">
+              <div class="label">File Uploaded</div>
+              <div style="color: #14b8a6; margin: 8px 0;" id="filename"></div>
+
+              <div class="label" style="margin-top: 20px;">Total KOIs Analyzed</div>
+              <div class="value" id="total-analyzed">0</div>
+
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <div>✓ Confirmed</div>
+                  <div class="stat-value" id="confirmed-count">0</div>
+                </div>
+                <div class="stat-item">
+                  <div>⚠ Candidates</div>
+                  <div class="stat-value" id="candidate-count">0</div>
+                </div>
+                <div class="stat-item">
+                  <div>✗ False Positives</div>
+                  <div class="stat-value" id="false-positive-count">0</div>
+                </div>
+                <div class="stat-item">
+                  <div>Discovery Rate</div>
+                  <div class="stat-value" id="discovery-rate">0%</div>
+                </div>
+              </div>
+
+              <div class="label" style="margin-top: 20px;">Processing Time</div>
+              <div style="color: white; font-weight: 600; margin-top: 4px;" id="processing-time">0s</div>
+            </div>
+          </div>
         </div>
 
-        <div id="results-content" class="hidden">
-          <div class="results-card">
-            <div class="label">File Uploaded</div>
-            <div style="color: #14b8a6; margin: 8px 0;" id="filename"></div>
+        <!-- Box 3: Top Discoveries -->
+        <div class="screen">
+          <div class="header-back">
+            <span class="back-btn" onclick="goBack()">←</span>
+            <h3>Top Discoveries</h3>
+          </div>
 
-            <div class="label" style="margin-top: 20px;">Total KOIs Analyzed</div>
-            <div class="value" id="total-analyzed">0</div>
-
-            <div class="stats-grid">
-              <div class="stat-item">
-                <div>✓ Confirmed</div>
-                <div class="stat-value" id="confirmed-count">0</div>
-              </div>
-              <div class="stat-item">
-                <div>⚠ Candidates</div>
-                <div class="stat-value" id="candidate-count">0</div>
-              </div>
-              <div class="stat-item">
-                <div>✗ False Positives</div>
-                <div class="stat-value" id="false-positive-count">0</div>
-              </div>
-              <div class="stat-item">
-                <div>Discovery Rate</div>
-                <div class="stat-value" id="discovery-rate">0%</div>
+          <div id="discoveries-content" class="hidden">
+            <div class="results-card">
+              <div class="label">High Confidence Exoplanets (>90%)</div>
+              <div id="top-discoveries" style="margin-top: 16px;">
               </div>
             </div>
 
-            <div class="label" style="margin-top: 20px;">Processing Time</div>
-            <div style="color: white; font-weight: 600; margin-top: 4px;" id="processing-time">0s</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="screen">
-        <div class="header-back">
-          <span class="back-btn" onclick="goBack()">←</span>
-          <h3>Top Discoveries</h3>
-        </div>
-
-        <div id="discoveries-content" class="hidden">
-          <div class="results-card">
-            <div class="label">High Confidence Exoplanets (>90%)</div>
-            <div id="top-discoveries" style="margin-top: 16px;">
-            </div>
-          </div>
-
-          <div class="results-card">
-            <div class="label">Model Information</div>
-            <div style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 12px;">
-              <strong style="color: white;">Algorithm:</strong> XGBoost Gradient Boosting<br>
-              <strong style="color: white;">Accuracy:</strong> 99.27%<br>
-              <strong style="color: white;">Features:</strong> 26 key parameters<br>
-              <strong style="color: white;">Training Data:</strong> NASA Kepler KOI Dataset
+            <div class="results-card">
+              <div class="label">Model Information</div>
+              <div style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                <strong style="color: white;">Algorithm:</strong> XGBoost Gradient Boosting<br>
+                <strong style="color: white;">Accuracy:</strong> 99.27%<br>
+                <strong style="color: white;">Features:</strong> 26 key parameters<br>
+                <strong style="color: white;">Training Data:</strong> NASA Kepler KOI Dataset
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="screen">
-        <div class="header-back">
-          <span class="back-btn" onclick="goBack()">←</span>
-          <h3>Download Results</h3>
-        </div>
-
-        <div id="download-content" class="hidden">
-          <div class="results-card">
-            <div class="label">Available Downloads</div>
-            
-            <div class="download-section" id="download-links">
-            </div>
+        <!-- Box 4: Download Results -->
+        <div class="screen">
+          <div class="header-back">
+            <span class="back-btn" onclick="goBack()">←</span>
+            <h3>Download Results</h3>
           </div>
 
-          <div class="results-card">
-            <div class="label">About the Results</div>
-            <div style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 12px;">
-              • <strong style="color: white;">Full Results:</strong> Complete dataset with predictions and confidence scores<br>
-              • <strong style="color: white;">Confirmed Only:</strong> Filtered list of confirmed exoplanets<br>
-              • <strong style="color: white;">Summary Report:</strong> Detailed statistical analysis and insights
+          <div id="download-content" class="hidden">
+            <div class="results-card">
+              <div class="label">Available Downloads</div>
+              
+              <div class="download-section" id="download-links">
+              </div>
+            </div>
+
+            <div class="results-card">
+              <div class="label">About the Results</div>
+              <div style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                • <strong style="color: white;">Full Results:</strong> Complete dataset with predictions and confidence scores<br>
+                • <strong style="color: white;">Confirmed Only:</strong> Filtered list of confirmed exoplanets<br>
+                • <strong style="color: white;">Summary Report:</strong> Detailed statistical analysis and insights
+              </div>
             </div>
           </div>
         </div>
@@ -810,6 +816,16 @@
     function displayResults(data, filename) {
       console.log('Displaying results:', data);
       
+      // Update Box 1 (read-only upload display)
+      document.getElementById('results-filename-display').textContent = filename;
+      
+      // Highlight selected mission in Box 1
+      document.getElementById('result-kepler').classList.remove('active');
+      document.getElementById('result-k2').classList.remove('active');
+      document.getElementById('result-tess').classList.remove('active');
+      document.getElementById('result-' + selectedMission).classList.add('active');
+      
+      // Update Box 2 (Analysis Results)
       document.getElementById('filename').textContent = filename;
       document.getElementById('total-analyzed').textContent = data.summary.total_analyzed;
       document.getElementById('confirmed-count').textContent = data.summary.confirmed;
@@ -820,6 +836,7 @@
 
       document.getElementById('results-content').classList.remove('hidden');
 
+      // Update Box 3 (Top Discoveries)
       const topDiscoveries = document.getElementById('top-discoveries');
       if (data.top_discoveries && data.top_discoveries.length > 0) {
         topDiscoveries.innerHTML = data.top_discoveries.map(d => `
@@ -835,6 +852,7 @@
       }
       document.getElementById('discoveries-content').classList.remove('hidden');
 
+      // Update Box 4 (Download Results)
       const downloadLinks = document.getElementById('download-links');
       downloadLinks.innerHTML = `
         <a href="${API_URL}${data.download_links.full_results}" download class="download-btn">
